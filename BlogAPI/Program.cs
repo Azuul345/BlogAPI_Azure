@@ -6,7 +6,7 @@ using BlogAPI.Repositories.Interfaces;
 using BlogAPI.Services.Implementations;
 using BlogAPI.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-
+using Azure.Identity;
 
 
 namespace BlogAPI
@@ -22,13 +22,36 @@ namespace BlogAPI
             // Create the builder which holds configuration, logging and DI container.
             var builder = WebApplication.CreateBuilder(args);
 
+            // Only load Key Vault when running on Azure (KeyVaultUri is set via CLI, not locally)
+            var keyVaultUri = builder.Configuration["KeyVaultUri"];
+            if (!string.IsNullOrEmpty(keyVaultUri))
+            {
+                builder.Configuration.AddAzureKeyVault(
+                    new Uri(keyVaultUri),
+                    new DefaultAzureCredential()
+                );
+            }
 
+
+            // Only runs on Azure. The CLI script sets KeyVaultUri as an app setting.
+            // Locally, this block is skipped and appsettings.Development.json is used.
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-            // Register AppDbContext so it can be injected into repositories and services.
-            // EF Core will use SQL Server with the given connection string.
             builder.Services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlServer(connectionString));
+                options.UseSqlServer(connectionString));
+
+            // Only enable Application Insights when running on Azure.
+            // The CLI script sets APPLICATIONINSIGHTS_CONNECTION_STRING as an app setting.
+            var appInsightsConnection = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+            if (!string.IsNullOrEmpty(appInsightsConnection))
+            {
+                builder.Services.AddApplicationInsightsTelemetry();
+            }
+
+            //// Reads StorageConnectionString from Key Vault when on Azure.
+            builder.Services.AddSingleton<BlobStorageService>();
+
+
+
 
             // Register AutoMapper and scans the assembly for Profile classes (BlogProfile).
             builder.Services.AddAutoMapper(typeof(Program));
@@ -52,8 +75,12 @@ namespace BlogAPI
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+
+
             // Register CORS so it can configure cross-origin access in the pipeline.
             builder.Services.AddCors();
+
+
 
             // Build the WebApplication (creates the DI container and middleware pipeline).
             var app = builder.Build();
