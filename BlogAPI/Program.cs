@@ -86,11 +86,14 @@ namespace BlogAPI
             var app = builder.Build();
 
             // In development it expose Swagger UI to document and test the API.
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+            //if (app.Environment.IsDevelopment())
+            //{
+            //    app.UseSwagger();
+            //    app.UseSwaggerUI();
+            //}
+            app.UseSwagger();
+            app.UseSwaggerUI();
+
             // Redirect HTTP requests to HTTPS.
             app.UseHttpsRedirection();
 
