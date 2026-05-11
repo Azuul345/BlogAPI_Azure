@@ -44,7 +44,10 @@ namespace BlogAPI
             var appInsightsConnection = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
             if (!string.IsNullOrEmpty(appInsightsConnection))
             {
-                builder.Services.AddApplicationInsightsTelemetry();
+                builder.Services.AddApplicationInsightsTelemetry(options =>
+                {
+                    options.ConnectionString = appInsightsConnection;
+                });
             }
 
             //// Reads StorageConnectionString from Key Vault when on Azure.
