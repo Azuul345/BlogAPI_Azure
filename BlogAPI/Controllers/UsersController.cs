@@ -83,4 +83,11 @@ public class UsersController : ControllerBase
         var users = await _userService.GetAllAsync();
         return Ok(users);
     }
+
+    [HttpGet("HelloWorld")]
+    public async Task<ActionResult<IEnumerable<UserResponse>>> GetHelloWorld()
+    {
+        
+        return Ok("Hello World");
+    }
 }
